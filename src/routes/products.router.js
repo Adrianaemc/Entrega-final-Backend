@@ -4,20 +4,20 @@ import { ProductManager } from '../managers/ProductManager.js';
 const router = Router();
 const productManager = new ProductManager();
 
-// GET /api/products/ → Obtener todos los productos
+// GET /api/products/ Obtener todos los productos
 router.get('/', async (req, res) => {
   const products = await productManager.getProducts();
   res.json(products);
 });
 
-// GET /api/products/:pid → Obtener un producto por ID
+// GET /api/products/:pid Obtener un producto por ID
 router.get('/:pid', async (req, res) => {
   const { pid } = req.params;
   const product = await productManager.getProductById(pid);
   product ? res.json(product) : res.status(404).json({ error: 'Producto no encontrado' });
 });
 
-// POST /api/products/ → Agregar nuevo producto
+// POST /api/products/  Agregar nuevo producto
 router.post('/', async (req, res) => {
   const { title, description, code, price, status = true, stock, category, thumbnails = [] } = req.body;
 
@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
   res.status(201).json(newProduct);
 });
 
-// PUT /api/products/:pid → Actualizar un producto (menos el id)
+// PUT /api/products/:pid , Actualizar un producto (menos el id)
 router.put('/:pid', async (req, res) => {
   const { pid } = req.params;
   const updates = req.body;
@@ -51,7 +51,7 @@ router.put('/:pid', async (req, res) => {
     : res.status(404).json({ error: 'Producto no encontrado' });
 });
 
-// DELETE /api/products/:pid → Eliminar producto
+// DELETE /api/products/:pid  Eliminar producto
 router.delete('/:pid', async (req, res) => {
   const { pid } = req.params;
   const deleted = await productManager.deleteProduct(pid);
