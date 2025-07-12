@@ -1,16 +1,5 @@
 [
   {
-    "id": "3",
-    "title": "Camisa",
-    "price": 5000,
-    "description": "Camisa blanca",
-    "code": "12111",
-    "stock": 12,
-    "category": "Hombre",
-    "status": true,
-    "thumbnails": []
-  },
-  {
     "id": "4",
     "title": "Pantalon clargo",
     "price": 50000,
@@ -21,6 +10,19 @@
     "status": true,
     "thumbnails": [
       "https://img.ltwebstatic.com/v4/j/pi/2025/06/12/ef/174969069892d7bcff39d5f8b4a81521faefa46b5e_thumbnail_560x.webp"
+    ]
+  },
+  {
+    "id": "5",
+    "title": "Camisa",
+    "price": 12222,
+    "description": "Camisa",
+    "code": "244433",
+    "stock": 3,
+    "category": "Mujer",
+    "status": true,
+    "thumbnails": [
+      "https://img.ltwebstatic.com/images3_pi/2025/03/11/4c/1741690542f31d4f4ea27be71321291e69f418f1d0_thumbnail_560x.webp"
     ]
   }
 ]
