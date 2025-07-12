@@ -9,8 +9,19 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "express": "^5.1.0"
-  }
+    "express": "^5.1.0",
+    "express-handlebars": "^8.0.3",
+    "socket.io": "^4.8.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adrianaemc/Preentrega1-Backend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Adrianaemc/Preentrega1-Backend/issues"
+  },
+  "homepage": "https://github.com/Adrianaemc/Preentrega1-Backend#readme",
+  "devDependencies": {},
+  "description": ""
 }

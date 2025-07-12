@@ -1,0 +1,17 @@
+<h1>Inicio</h1>
+
+<a href="/realtimeproducts">
+  <button style="margin-bottom: 20px;">Ir a productos en tiempo real</button>
+</a>
+
+<div style="display: flex; flex-wrap: wrap; gap: 15px;">
+  {{#each products}}
+    <div style="border: 1px solid #ccc; padding: 10px; border-radius: 8px; width: 200px; background-color: #f9f9f9; text-align: center;">
+      {{#if this.thumbnails.[0]}}
+        <img src="{{this.thumbnails.[0]}}" alt="imagen de {{this.title}}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px;" />
+      {{/if}}
+      <h3 style="margin:10px 0 5px;">{{this.title}}</h3>
+      <p style="margin: 0;">${{this.price}}</p>
+    </div>
+  {{/each}}
+</div>

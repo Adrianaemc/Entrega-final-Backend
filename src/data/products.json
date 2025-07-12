@@ -1,15 +1,26 @@
 [
   {
-    "id": "2",
-    "title": "Pantalón Cargo",
-    "description": "Pantalón de gabardina resistente",
-    "code": "PNT456",
-    "price": 5500,
+    "id": "3",
+    "title": "Camisa",
+    "price": 5000,
+    "description": "Camisa blanca",
+    "code": "12111",
+    "stock": 12,
+    "category": "Hombre",
     "status": true,
-    "stock": 8,
-    "category": "Ropa",
+    "thumbnails": []
+  },
+  {
+    "id": "4",
+    "title": "Pantalon clargo",
+    "price": 50000,
+    "description": "Cargo original",
+    "code": "4444",
+    "stock": 2,
+    "category": "Hombre",
+    "status": true,
     "thumbnails": [
-      "uploads/pantalon1.png"
+      "https://img.ltwebstatic.com/v4/j/pi/2025/06/12/ef/174969069892d7bcff39d5f8b4a81521faefa46b5e_thumbnail_560x.webp"
     ]
   }
 ]
