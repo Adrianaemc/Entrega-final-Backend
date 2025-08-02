@@ -1,0 +1,71 @@
+<div class="container my-5">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="text-primary">Lista de productos</h1>
+    <a href="/carts/688e355d813e7eaf8f109819" class="btn btn-outline-primary">
+      🛒 Ver Carrito
+    </a>
+  </div>
+
+  <!-- Grid de productos -->
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {{#each products}}
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <img src="{{this.thumbnails.[0]}}" class="card-img-top" alt="{{this.title}}" style="object-fit: cover; height: 200px;">
+          <div class="card-body d-flex flex-column justify-content-between">
+            <div>
+              <h5 class="card-title">{{this.title}}</h5>
+              <p class="card-text">{{this.description}}</p>
+              <p><strong>Precio:</strong> ${{this.price}}</p>
+            </div>
+            <button class="btn btn-success mt-2 add-to-cart w-100" data-id="{{this._id}}">
+              Agregar al carrito
+            </button>
+          </div>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+
+  <!-- Paginación -->
+  <div class="d-flex justify-content-center align-items-center mt-4">
+    {{#if hasPrevPage}}
+      <a href="?page={{prevPage}}" class="btn btn-outline-secondary me-3">⬅ Anterior</a>
+    {{/if}}
+
+    <span class="mx-2">Página {{page}} de {{totalPages}}</span>
+
+    {{#if hasNextPage}}
+      <a href="?page={{nextPage}}" class="btn btn-outline-secondary ms-3">Siguiente ➡</a>
+    {{/if}}
+  </div>
+</div>
+
+<!-- Script para agregar al carrito -->
+<script>
+  const buttons = document.querySelectorAll('.add-to-cart');
+  const cartId = '688e355d813e7eaf8f109819'; // ID fijo
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const productId = btn.dataset.id;
+      try {
+        const res = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert('Producto agregado al carrito');
+        } else {
+          alert(data.error || 'Error al agregar el producto');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Falló la solicitud');
+      }
+    });
+  });
+</script>
