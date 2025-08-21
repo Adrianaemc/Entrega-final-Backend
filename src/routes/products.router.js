@@ -5,7 +5,6 @@ import { Product } from '../models/Product.js';
 const router = Router();
 const { isValidObjectId } = mongoose;
 
-/* ------------------------- Helpers ------------------------- */
 const toInt = (v, def = 1) => {
   const n = parseInt(v, 10);
   return Number.isNaN(n) || n < 1 ? def : n;
@@ -15,7 +14,6 @@ const buildFilter = (rawQuery) => {
   if (!rawQuery) return {};
   const q = String(rawQuery).trim();
 
-  // admitir "status=true/false" o simplemente "true/false"
   if (/^status\s*:\s*(true|false)$/i.test(q)) {
     const val = /true$/i.test(q);
     return { status: val };
@@ -24,7 +22,6 @@ const buildFilter = (rawQuery) => {
     return { status: /^true$/i.test(q) };
   }
 
-  // por defecto, interpretarlo como categoría exacta
   return { category: q };
 };
 
@@ -48,7 +45,6 @@ const pageLink = (req, page, limit) => {
   return url.toString();
 };
 
-/* ------------------- GET /api/products (lista) ------------------- */
 router.get('/', async (req, res) => {
   try {
     const limit = toInt(req.query.limit, 10);
@@ -56,7 +52,7 @@ router.get('/', async (req, res) => {
     const filter = buildFilter(req.query.query);
     const sortOption = buildSort(req.query.sort);
 
-    // Usa mongoose-paginate-v2 (asumido en el modelo)
+    
     const result = await Product.paginate(filter, {
       page,
       limit,
@@ -82,7 +78,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-/* ---------------- GET /api/products/:pid (detalle) ---------------- */
 router.get('/:pid', async (req, res) => {
   try {
     const { pid } = req.params;
@@ -98,7 +93,7 @@ router.get('/:pid', async (req, res) => {
   }
 });
 
-/* ---------- POST /api/products (uno o varios) ---------- */
+
 router.post('/', async (req, res) => {
   const body = req.body;
 
@@ -158,7 +153,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-/* --------------- PUT /api/products/:pid (update) --------------- */
+
 router.put('/:pid', async (req, res) => {
   try {
     const { pid } = req.params;
@@ -166,7 +161,7 @@ router.put('/:pid', async (req, res) => {
       return res.status(400).json({ error: 'ID inválido' });
     }
 
-    // impedir setear _id
+
     if ('_id' in req.body) delete req.body._id;
 
     const updated = await Product.findByIdAndUpdate(pid, req.body, { new: true, runValidators: true });
@@ -178,7 +173,7 @@ router.put('/:pid', async (req, res) => {
   }
 });
 
-/* --------------- DELETE /api/products/:pid (delete) --------------- */
+
 router.delete('/:pid', async (req, res) => {
   try {
     const { pid } = req.params;

@@ -11,9 +11,9 @@
     <h1 class="text-center mb-4">🛒 Mi Carrito</h1>
 
     {{#if cart.products.length}}
-      <div class="row g-4">
+      <div class="row g-4" id="cart-products">
         {{#each cart.products}}
-          <div class="col-md-6">
+          <div class="col-md-6 product-card" data-pid="{{this.product._id}}">
             <div class="card shadow-sm h-100">
               <div class="row g-0">
                 <div class="col-4">
@@ -25,9 +25,7 @@
                     <p class="card-text">{{this.product.description}}</p>
                     <p class="card-text"><strong>Precio:</strong> ${{this.product.price}}</p>
                     <p class="card-text"><strong>Cantidad:</strong> {{this.quantity}}</p>
-                    <form action="/api/carts/{{../cart._id}}/products/{{this.product._id}}" method="POST">
-                      <button type="submit" class="btn btn-danger btn-sm mt-2">🗑 Eliminar</button>
-                    </form>
+                    <button class="btn btn-danger btn-sm mt-2 delete-product" data-cid="{{../cart._id}}" data-pid="{{this.product._id}}">🗑 Eliminar</button>
                   </div>
                 </div>
               </div>
@@ -45,5 +43,27 @@
       <a href="/products" class="btn btn-outline-primary">⬅ Volver a productos</a>
     </div>
   </div>
+
+  <script>
+    document.querySelectorAll('.delete-product').forEach(button => {
+      button.addEventListener('click', async () => {
+        const cid = button.dataset.cid;
+        const pid = button.dataset.pid;
+
+        const confirmed = confirm('¿Estás seguro de eliminar este producto del carrito?');
+        if (!confirmed) return;
+
+        const response = await fetch(`/api/carts/${cid}/products/${pid}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          document.querySelector(`.product-card[data-pid="${pid}"]`).remove();
+        } else {
+          alert('Error al eliminar el producto');
+        }
+      });
+    });
+  </script>
 </body>
 </html>
