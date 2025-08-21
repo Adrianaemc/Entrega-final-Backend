@@ -1,34 +1,68 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { Product } from '../models/Product.js';
 
 const router = Router();
+const { isValidObjectId } = mongoose;
 
-// GET /api/products/ — Con paginación, filtro y sort
+/* ------------------------- Helpers ------------------------- */
+const toInt = (v, def = 1) => {
+  const n = parseInt(v, 10);
+  return Number.isNaN(n) || n < 1 ? def : n;
+};
+
+const buildFilter = (rawQuery) => {
+  if (!rawQuery) return {};
+  const q = String(rawQuery).trim();
+
+  // admitir "status=true/false" o simplemente "true/false"
+  if (/^status\s*:\s*(true|false)$/i.test(q)) {
+    const val = /true$/i.test(q);
+    return { status: val };
+  }
+  if (/^(true|false)$/i.test(q)) {
+    return { status: /^true$/i.test(q) };
+  }
+
+  // por defecto, interpretarlo como categoría exacta
+  return { category: q };
+};
+
+const buildSort = (sort) => {
+  if (!sort) return {};
+  const s = String(sort).toLowerCase();
+  if (s === 'asc') return { price: 1 };
+  if (s === 'desc') return { price: -1 };
+  return {};
+};
+
+const pageLink = (req, page, limit) => {
+  const url = new URL(`${req.protocol}://${req.get('host')}${req.path}`);
+  // conservar query params
+  const params = req.query || {};
+  Object.entries(params).forEach(([k, v]) => {
+    if (k !== 'page' && k !== 'limit') url.searchParams.set(k, v);
+  });
+  url.searchParams.set('page', page);
+  url.searchParams.set('limit', limit);
+  return url.toString();
+};
+
+/* ------------------- GET /api/products (lista) ------------------- */
 router.get('/', async (req, res) => {
   try {
-    const { limit = 10, page = 1, sort, query } = req.query;
+    const limit = toInt(req.query.limit, 10);
+    const page = toInt(req.query.page, 1);
+    const filter = buildFilter(req.query.query);
+    const sortOption = buildSort(req.query.sort);
 
-    let filter = {};
-    if (query) {
-      filter = {
-        $or: [
-          { category: query },
-          { status: query === 'true' } // permite buscar por disponibilidad
-        ]
-      };
-    }
-
-    const sortOption =
-      sort === 'asc' ? { price: 1 } : sort === 'desc' ? { price: -1 } : {};
-
+    // Usa mongoose-paginate-v2 (asumido en el modelo)
     const result = await Product.paginate(filter, {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
       sort: sortOption,
       lean: true
     });
-
-    const baseUrl = `${req.protocol}://${req.get('host')}${req.path}`;
 
     res.json({
       status: 'success',
@@ -39,53 +73,70 @@ router.get('/', async (req, res) => {
       page: result.page,
       hasPrevPage: result.hasPrevPage,
       hasNextPage: result.hasNextPage,
-      prevLink: result.hasPrevPage
-        ? `${baseUrl}?page=${result.prevPage}&limit=${limit}`
-        : null,
-      nextLink: result.hasNextPage
-        ? `${baseUrl}?page=${result.nextPage}&limit=${limit}`
-        : null
+      prevLink: result.hasPrevPage ? pageLink(req, result.prevPage, limit) : null,
+      nextLink: result.hasNextPage ? pageLink(req, result.nextPage, limit) : null
     });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: error.message });
+    console.error('GET /api/products error:', error);
+    res.status(500).json({ status: 'error', message: 'Error al obtener productos' });
   }
 });
 
-// GET /api/products/:pid — Buscar por ID
+/* ---------------- GET /api/products/:pid (detalle) ---------------- */
 router.get('/:pid', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.pid).lean();
-    if (!product) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+    const { pid } = req.params;
+    if (!isValidObjectId(pid)) {
+      return res.status(400).json({ error: 'ID inválido' });
     }
+    const product = await Product.findById(pid).lean();
+    if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json(product);
   } catch (error) {
-    res.status(500).json({ error: 'ID inválido' });
+    console.error('GET /api/products/:pid error:', error);
+    res.status(500).json({ error: 'Error al obtener el producto' });
   }
 });
 
-
-// POST /api/products - Agregar uno o varios productos
+/* ---------- POST /api/products (uno o varios) ---------- */
 router.post('/', async (req, res) => {
   const body = req.body;
 
-  // Si es un array => carga masiva
+  // CARGA MASIVA
   if (Array.isArray(body)) {
+    if (body.length === 0) {
+      return res.status(400).json({ error: 'El array de productos está vacío' });
+    }
+    // Validación mínima por cada item
+    const missing = body.findIndex(p =>
+      !p?.title || !p?.description || !p?.code || p?.price == null || p?.stock == null || !p?.category
+    );
+    if (missing !== -1) {
+      return res.status(400).json({ error: `Producto #${missing + 1} con campos faltantes` });
+    }
+
     try {
-      const createdProducts = await Product.insertMany(body);
-      return res.status(201).json({
-        message: 'Productos cargados correctamente',
-        products: createdProducts
-      });
+      const created = await Product.insertMany(body);
+      return res.status(201).json({ message: 'Productos creados', products: created });
     } catch (error) {
-      return res.status(500).json({ error: 'Error al cargar productos', details: error.message });
+      console.error('Bulk insert error:', error);
+      return res.status(500).json({ error: 'Error al crear productos', details: error.message });
     }
   }
 
-  // Si es un solo objeto => carga individual
-  const { title, description, code, price, status = true, stock, category, thumbnails = [] } = body;
+  // CARGA INDIVIDUAL
+  const {
+    title,
+    description,
+    code,
+    price,
+    status = true,
+    stock,
+    category,
+    thumbnails = []
+  } = body;
 
-  if (!title || !description || !code || !price || !stock || !category) {
+  if (!title || !description || !code || price == null || stock == null || !category) {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
 
@@ -102,34 +153,45 @@ router.post('/', async (req, res) => {
     });
     res.status(201).json({ message: 'Producto creado', product: newProduct });
   } catch (error) {
+    console.error('Create product error:', error);
     res.status(500).json({ error: 'Error al crear el producto', details: error.message });
   }
 });
 
-
-// PUT /api/products/:pid — Actualizar producto
+/* --------------- PUT /api/products/:pid (update) --------------- */
 router.put('/:pid', async (req, res) => {
   try {
-    const updated = await Product.findByIdAndUpdate(req.params.pid, req.body, { new: true });
-    if (!updated) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+    const { pid } = req.params;
+    if (!isValidObjectId(pid)) {
+      return res.status(400).json({ error: 'ID inválido' });
     }
+
+    // impedir setear _id
+    if ('_id' in req.body) delete req.body._id;
+
+    const updated = await Product.findByIdAndUpdate(pid, req.body, { new: true, runValidators: true });
+    if (!updated) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json({ message: 'Producto actualizado', product: updated });
   } catch (error) {
-    res.status(500).json({ error: 'ID inválido o error de actualización' });
+    console.error('Update product error:', error);
+    res.status(500).json({ error: 'Error al actualizar el producto' });
   }
 });
 
-// DELETE /api/products/:pid — Eliminar producto
+/* --------------- DELETE /api/products/:pid (delete) --------------- */
 router.delete('/:pid', async (req, res) => {
   try {
-    const deleted = await Product.findByIdAndDelete(req.params.pid);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Producto no encontrado' });
+    const { pid } = req.params;
+    if (!isValidObjectId(pid)) {
+      return res.status(400).json({ error: 'ID inválido' });
     }
+
+    const deleted = await Product.findByIdAndDelete(pid);
+    if (!deleted) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json({ message: 'Producto eliminado' });
   } catch (error) {
-    res.status(500).json({ error: 'ID inválido o error al eliminar' });
+    console.error('Delete product error:', error);
+    res.status(500).json({ error: 'Error al eliminar el producto' });
   }
 });
 

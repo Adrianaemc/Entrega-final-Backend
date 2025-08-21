@@ -7,64 +7,69 @@
     </a>
   </div>
 
-  <!-- Grid de productos -->
-  <div class="row row-cols-1 row-cols-md-3 g-4">
-    {{#each products}}
-      <div class="col">
-        <div class="card h-100 shadow-sm">
-          <img src="{{this.thumbnails.[0]}}" class="card-img-top" alt="{{this.title}}" style="object-fit: cover; height: 200px;">
-          <div class="card-body d-flex flex-column justify-content-between">
-            <div>
-              <h5 class="card-title">{{this.title}}</h5>
-              <p class="card-text">{{this.description}}</p>
-              <p><strong>Precio:</strong> ${{this.price}}</p>
-            </div>
-            <button class="btn btn-success mt-2 add-to-cart w-100" data-id="{{this._id}}">
-              Agregar al carrito
-            </button>
-          </div>
-        </div>
+  <h1>Lista de productos</h1>
+
+<div class="products-grid">
+  {{#each products}}
+    <div class="product-card">
+      <img src="{{this.thumbnails.[0]}}" alt="{{this.title}}" />
+      <h2>{{this.title}}</h2>
+      <p><strong>Precio:</strong> ${{this.price}}</p>
+      <p>{{this.description}}</p>
+
+      <div class="row gap-8">
+        <label for="qty-{{this._id}}">Cantidad:</label>
+        <input id="qty-{{this._id}}" type="number" min="1" value="1" class="qty-input" data-id="{{this._id}}" />
       </div>
-    {{/each}}
-  </div>
 
-  <!-- Paginación -->
-  <div class="d-flex justify-content-center align-items-center mt-4">
-    {{#if hasPrevPage}}
-      <a href="?page={{prevPage}}" class="btn btn-outline-secondary me-3">⬅ Anterior</a>
-    {{/if}}
-
-    <span class="mx-2">Página {{page}} de {{totalPages}}</span>
-
-    {{#if hasNextPage}}
-      <a href="?page={{nextPage}}" class="btn btn-outline-secondary ms-3">Siguiente ➡</a>
-    {{/if}}
-  </div>
+      <button class="add-to-cart" data-id="{{this._id}}">Agregar al carrito</button>
+    </div>
+  {{/each}}
 </div>
 
-<!-- Script para agregar al carrito -->
-<script>
-  const buttons = document.querySelectorAll('.add-to-cart');
-  const cartId = '688e355d813e7eaf8f109819'; // ID fijo
+<div class="pagination">
+  {{#if hasPrevPage}}
+    <a href="?page={{prevPage}}&limit={{limit}}&sort={{sort}}&query={{query}}">⬅ Anterior</a>
+  {{/if}}
 
-  buttons.forEach(btn => {
+  <span>Página {{page}} de {{totalPages}}</span>
+
+  {{#if hasNextPage}}
+    <a href="?page={{nextPage}}&limit={{limit}}&sort={{sort}}&query={{query}}">Siguiente ➡</a>
+  {{/if}}
+</div>
+
+<div style="margin-top:16px">
+  <!-- Cambiá este ID por el tuyo mientras tanto -->
+  <a class="btn" href="/carts/688e355d813e7eaf8f109819">Ver carrito</a>
+</div>
+
+<script>
+  // ⚠️ Reemplazá por tu cartId real o ponelo en una variable de entorno/render
+  const CART_ID = '688e355d813e7eaf8f109819';
+
+  document.querySelectorAll('.add-to-cart').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const productId = btn.dataset.id;
+      const pid = btn.dataset.id;
+      const qtyInput = document.querySelector(`#qty-${pid}`);
+      const quantity = Number(qtyInput?.value || 1);
+
       try {
-        const res = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+        const res = await fetch(`/api/carts/${CART_ID}/products/${pid}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity }) // <<----- acá va la cantidad por body
         });
 
         const data = await res.json();
-        if (res.ok) {
-          alert('Producto agregado al carrito');
-        } else {
-          alert(data.error || 'Error al agregar el producto');
+        if (!res.ok) {
+          alert(data.error || 'Error al agregar');
+          return;
         }
+        alert('Agregado al carrito');
       } catch (err) {
         console.error(err);
-        alert('Falló la solicitud');
+        alert('Error de red');
       }
     });
   });
